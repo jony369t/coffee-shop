@@ -1,10 +1,16 @@
 import React, { useState } from 'react'
+import { useNavigate, Link } from 'react-router'
+import { useAuth } from '../context/useAuth'
 
 export default function Login() {
+  const navigate = useNavigate()
+  const { login, isLoading } = useAuth()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -12,11 +18,30 @@ export default function Login() {
       ...prev,
       [name]: value
     }))
+    setError('') // Clear error when user types
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log('Login attempt:', formData)
+    setError('')
+    setSuccess('')
+
+    if (!formData.email || !formData.password) {
+      setError('Please fill in all fields')
+      return
+    }
+
+    // Call login function from AuthContext
+    const result = await login(formData.email, formData.password)
+
+    if (result.success) {
+      setSuccess('Login successful! Redirecting...')
+      setTimeout(() => {
+        navigate('/')
+      }, 1500)
+    } else {
+      setError(result.message)
+    }
   }
 
   return (
@@ -31,6 +56,20 @@ export default function Login() {
 
         {/* Login Card */}
         <div className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-2xl p-8 border border-amber-900/30 shadow-2xl hover:shadow-amber-900/30">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-900/20 border border-red-700 text-red-200 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-4 bg-green-900/20 border border-green-700 text-green-200 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div>
@@ -80,9 +119,10 @@ export default function Login() {
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:shadow-amber-900/50"
+              disabled={isLoading}
+              className="w-full py-3 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:shadow-amber-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign In
+              {isLoading ? 'Signing In...' : 'Sign In'}
             </button>
           </form>
 
@@ -113,9 +153,9 @@ export default function Login() {
           <div className="text-center mt-6">
             <p className="text-gray-400">
               Don't have an account?{' '}
-              <a href="/register" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors">
+              <Link to="/register" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors">
                 Sign up now
-              </a>
+              </Link>
             </p>
           </div>
         </div>

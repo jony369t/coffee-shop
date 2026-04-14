@@ -1,35 +1,59 @@
 import React, { useState } from 'react'
+import { useNavigate, Link } from 'react-router'
+import { useAuth } from '../context/useAuth'
 
 export default function Register() {
+  const navigate = useNavigate()
+  const { register, isLoading } = useAuth()
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    newsletter: true,
   })
-
-  const [passwordMatch, setPasswordMatch] = useState(true)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }))
-
-    if (name === 'confirmPassword' || name === 'password') {
-      const pwd = name === 'password' ? value : formData.password
-      const confirmPwd = name === 'confirmPassword' ? value : formData.confirmPassword
-      setPasswordMatch(pwd === confirmPwd)
-    }
+    setError('') // Clear error when user types
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (passwordMatch) {
-      console.log('Registration:', formData)
+    setError('')
+    setSuccess('')
+
+    // Validation
+    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+      setError('Please fill in all fields')
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
+
+    // Call register function from AuthContext
+    const result = await register(formData.name, formData.email, formData.password)
+
+    if (result.success) {
+      setSuccess('Registration successful! Redirecting...')
+      setTimeout(() => {
+        navigate('/')
+      }, 1500)
+    } else {
+      setError(result.message)
     }
   }
 
@@ -45,39 +69,36 @@ export default function Register() {
 
         {/* Register Card */}
         <div className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-2xl p-8 border border-amber-900/30 shadow-2xl hover:shadow-amber-900/30">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-4 bg-red-900/20 border border-red-700 text-red-200 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 p-4 bg-green-900/20 border border-green-700 text-green-200 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-semibold text-amber-200 mb-2">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  id="firstName"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  placeholder="John"
-                  className="w-full px-4 py-3 rounded-lg bg-[#0f0f0f] border border-amber-900/50 text-white placeholder-gray-600 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700/50 transition-all"
-                  required
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-semibold text-amber-200 mb-2">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  id="lastName"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  placeholder="Doe"
-                  className="w-full px-4 py-3 rounded-lg bg-[#0f0f0f] border border-amber-900/50 text-white placeholder-gray-600 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700/50 transition-all"
-                  required
-                />
-              </div>
+            {/* Full Name Field */}
+            <div>
+              <label htmlFor="name" className="block text-sm font-semibold text-amber-200 mb-2">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                placeholder="John Doe"
+                className="w-full px-4 py-3 rounded-lg bg-[#0f0f0f] border border-amber-900/50 text-white placeholder-gray-600 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700/50 transition-all"
+                required
+              />
             </div>
 
             {/* Email Field */}
@@ -126,53 +147,18 @@ export default function Register() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="••••••••"
-                className={`w-full px-4 py-3 rounded-lg bg-[#0f0f0f] border ${
-                  passwordMatch ? 'border-amber-900/50' : 'border-red-900/50'
-                } text-white placeholder-gray-600 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700/50 transition-all`}
+                className="w-full px-4 py-3 rounded-lg bg-[#0f0f0f] border border-amber-900/50 text-white placeholder-gray-600 focus:outline-none focus:border-amber-700 focus:ring-1 focus:ring-amber-700/50 transition-all"
                 required
               />
-              {!passwordMatch && (
-                <p className="text-red-400 text-sm mt-1">Passwords do not match</p>
-              )}
             </div>
-
-            {/* Newsletter Checkbox */}
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="newsletter"
-                checked={formData.newsletter}
-                onChange={handleChange}
-                className="w-4 h-4 rounded bg-[#0f0f0f] border border-amber-900/50 cursor-pointer"
-              />
-              <span className="text-gray-400 text-sm">
-                Subscribe to our newsletter for coffee tips and special offers
-              </span>
-            </label>
-
-            {/* Terms Agreement */}
-            <label className="flex items-start gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                required
-                className="w-4 h-4 rounded bg-[#0f0f0f] border border-amber-900/50 cursor-pointer mt-0.5"
-              />
-              <span className="text-gray-400 text-sm">
-                I agree to the Terms of Service and Privacy Policy
-              </span>
-            </label>
 
             {/* Register Button */}
             <button
               type="submit"
-              disabled={!passwordMatch}
-              className={`w-full py-3 rounded-lg font-bold transition-all shadow-lg ${
-                passwordMatch
-                  ? 'bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white cursor-pointer hover:shadow-xl hover:shadow-amber-900/50'
-                  : 'bg-gray-600 text-gray-300 cursor-not-allowed'
-              }`}
+              disabled={isLoading}
+              className="w-full py-3 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-xl hover:shadow-amber-900/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {isLoading ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
@@ -180,9 +166,9 @@ export default function Register() {
           <div className="text-center mt-6">
             <p className="text-gray-400">
               Already have an account?{' '}
-              <a href="/login" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors">
+              <Link to="/login" className="text-amber-400 hover:text-amber-300 font-semibold transition-colors">
                 Sign in here
-              </a>
+              </Link>
             </p>
           </div>
         </div>

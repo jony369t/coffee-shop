@@ -1,163 +1,262 @@
-import React, { useState } from 'react'
+import { useState, useEffect } from 'react';
+import { useCart } from '../context/CartContext';
 
+/**
+ * Menu Page
+ * Features:
+ * - Display all products from database
+ * - Filter by category
+ * - Add to cart with quantity selector
+ * - Show product images
+ * - Display ratings
+ */
 export default function Menu() {
-  const [activeCategory, setActiveCategory] = useState('espresso')
+  const { addToCart } = useCart();
+  const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [quantities, setQuantities] = useState({});
 
-  const menuItems = {
-    espresso: [
-      { name: 'Single Shot', description: 'Pure concentrated espresso', price: '$3.50' },
-      { name: 'Double Shot', description: 'Rich and bold double espresso', price: '$4.50' },
-      { name: 'Triple Shot', description: 'For espresso lovers seeking intensity', price: '$5.50' },
-      { name: 'Americano', description: 'Espresso shots with hot water', price: '$4.00' },
-    ],
-    milk: [
-      { name: 'Latte', description: 'Espresso with steamed milk and light foam', price: '$5.50' },
-      { name: 'Cappuccino', description: 'Equal parts espresso, steamed milk, and thick foam', price: '$5.50' },
-      { name: 'Macchiato', description: 'Espresso "marked" with a touch of milk foam', price: '$4.50' },
-      { name: 'Flat White', description: 'Espresso with velvety steamed milk', price: '$5.75' },
-      { name: 'Cortado', description: 'Equal parts espresso and steamed milk', price: '$4.50' },
-    ],
-    cold: [
-      { name: 'Cold Brew', description: 'Smooth 18-hour steeped coffee', price: '$4.50' },
-      { name: 'Iced Latte', description: 'Chilled latte over ice', price: '$5.50' },
-      { name: 'Iced Cappuccino', description: 'Creamy cappuccino served cold', price: '$5.50' },
-      { name: 'Cold Brew Float', description: 'Cold brew with vanilla ice cream', price: '$6.50' },
-    ],
-    specialty: [
-      { name: 'Mocha', description: 'Latte with rich chocolate', price: '$6.00' },
-      { name: 'Caramel Latte', description: 'Creamy latte with caramel drizzle', price: '$6.00' },
-      { name: 'Vanilla Latte', description: 'Smooth latte infused with vanilla', price: '$5.75' },
-      { name: 'Hazelnut Cappuccino', description: 'Classic cappuccino with hazelnut', price: '$5.75' },
-      { name: 'Spiced Chai Latte', description: 'Aromatic chai with steamed milk', price: '$5.50' },
-    ],
-  }
+  const API_URL = 'http://localhost:5000/api';
+
+  // Fetch products on mount
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // Filter products when category changes
+  useEffect(() => {
+    if (selectedCategory === 'all') {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(
+        products.filter((p) => p.category === selectedCategory)
+      );
+    }
+  }, [selectedCategory, products]);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch(`${API_URL}/products`);
+      const data = await response.json();
+      setProducts(data.products || []);
+      
+      // Initialize quantities
+      const quantitiesObj = {};
+      (data.products || []).forEach((p) => {
+        quantitiesObj[p._id] = 1;
+      });
+      setQuantities(quantitiesObj);
+    } catch (err) {
+      setError('Failed to load products');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = (product) => {
+    const quantity = quantities[product._id] || 1;
+    addToCart(product, quantity);
+    
+    // Show success message
+    setSuccessMessage(`${product.name} x${quantity} added to cart!`);
+    setTimeout(() => setSuccessMessage(''), 3000);
+    
+    // Reset quantity
+    setQuantities({ ...quantities, [product._id]: 1 });
+  };
+
+  const updateQuantity = (productId, quantity) => {
+    if (quantity >= 1 && quantity <= 10) {
+      setQuantities({ ...quantities, [productId]: quantity });
+    }
+  };
+
+  // Get unique categories
+  const categories = ['all', ...new Set(products.map((p) => p.category))];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0f0f0f] to-[#1a1a1a]">
-      {/* Hero Section */}
-      <div className="py-16 px-4 bg-gradient-to-r from-amber-900 to-amber-800 text-white">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-black mb-4">Our Coffee Menu</h1>
-          <p className="text-xl text-amber-100">Carefully curated selections from around the world</p>
+    <div className="min-h-screen bg-gradient-to-b from-[#0f0f0f] to-[#1a1a1a] py-12">
+      <div className="max-w-7xl mx-auto px-4">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-black text-amber-100 mb-4">☕ Our Menu</h1>
+          <p className="text-gray-400 text-lg">Freshly brewed coffee for every moment</p>
         </div>
-      </div>
 
-      {/* Menu Section */}
-      <div className="py-20 px-4">
-        <div className="max-w-6xl mx-auto">
-          {/* Category Tabs */}
-          <div className="flex flex-wrap justify-center gap-4 mb-12">
-            {[
-              { key: 'espresso', label: 'Espresso', emoji: '☕' },
-              { key: 'milk', label: 'Milk Drinks', emoji: '🥛' },
-              { key: 'cold', label: 'Cold Brews', emoji: '❄️' },
-              { key: 'specialty', label: 'Specialty', emoji: '✨' },
-            ].map(cat => (
-              <button
-                key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
-                className={`px-6 py-3 rounded-full font-bold transition-all ${
-                  activeCategory === cat.key
-                    ? 'bg-amber-700 text-white shadow-lg'
-                    : 'bg-[#1a1a1a] text-amber-300 border border-amber-700 hover:border-amber-500'
-                }`}
-              >
-                {cat.emoji} {cat.label}
-              </button>
-            ))}
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-900/30 border border-green-600 text-green-200 rounded-lg">
+            ✓ {successMessage}
           </div>
+        )}
 
-          {/* Menu Items Grid */}
-          <div className="grid md:grid-cols-2 gap-6">
-            {menuItems[activeCategory].map((item, index) => (
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/30 border border-red-600 text-red-200 rounded-lg">
+            ✕ {error}
+          </div>
+        )}
+
+        {/* Category Filter */}
+        <div className="mb-8 flex justify-center gap-3 flex-wrap">
+          {categories.map((category) => (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              className={`px-6 py-2 rounded-full font-semibold transition-all ${
+                selectedCategory === category
+                  ? 'bg-amber-700 text-white shadow-lg shadow-amber-900/50'
+                  : 'bg-[#252525] text-amber-200 hover:bg-[#353535]'
+              }`}
+            >
+              {category.charAt(0).toUpperCase() + category.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Loading State */}
+        {loading ? (
+          <div className="text-center py-16">
+            <span className="loading loading-spinner loading-lg text-amber-700"></span>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-16">
+            <p className="text-gray-400 text-lg">No products found</p>
+          </div>
+        ) : (
+          /* Product Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredProducts.map((product) => (
               <div
-                key={index}
-                className="bg-gradient-to-br from-[#1a1a1a] to-[#252525] rounded-xl p-6 border border-amber-900/30 hover:border-amber-700/50 transition-all hover:shadow-lg hover:shadow-amber-900/30 group"
+                key={product._id}
+                className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-lg overflow-hidden border border-amber-900/30 hover:border-amber-700/50 transition-all shadow-lg hover:shadow-amber-900/30"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-2xl font-bold text-amber-100 group-hover:text-amber-300 transition-colors">
-                    {item.name}
-                  </h3>
-                  <span className="text-amber-400 font-bold text-xl">{item.price}</span>
+                {/* Product Image */}
+                <div className="h-48 bg-[#0f0f0f] overflow-hidden">
+                  {product.image ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.src = '☕';
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-amber-900/20 to-black">
+                      ☕
+                    </div>
+                  )}
                 </div>
-                <p className="text-gray-400">{item.description}</p>
+
+                {/* Product Info */}
+                <div className="p-4">
+                  <h3 className="text-xl font-bold text-amber-100 mb-2">{product.name}</h3>
+                  
+                  <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                    {product.description || 'Premium coffee experience'}
+                  </p>
+
+                  {/* Category Badge */}
+                  {product.category && (
+                    <div className="mb-3">
+                      <span className="inline-block px-2 py-1 bg-amber-900/30 text-amber-300 text-xs rounded-full">
+                        {product.category}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Stock Status */}
+                  <div className="mb-3">
+                    <span
+                      className={`text-sm font-semibold ${
+                        product.available && product.stock > 0
+                          ? 'text-green-400'
+                          : 'text-red-400'
+                      }`}
+                    >
+                      {product.available && product.stock > 0
+                        ? `${product.stock} in stock`
+                        : 'Out of stock'}
+                    </span>
+                  </div>
+
+                  {/* Rating */}
+                  {product.rating && (
+                    <div className="mb-3">
+                      <span className="text-amber-300">
+                        ⭐ {product.rating.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Price */}
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-amber-400">
+                      ${product.price.toFixed(2)}
+                    </span>
+                  </div>
+
+                  {/* Quantity Selector & Add to Cart */}
+                  {product.available && product.stock > 0 ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center border border-amber-900/50 rounded-lg overflow-hidden">
+                        <button
+                          onClick={() =>
+                            updateQuantity(product._id, (quantities[product._id] || 1) - 1)
+                          }
+                          className="px-3 py-2 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 font-bold"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={quantities[product._id] || 1}
+                          onChange={(e) =>
+                            updateQuantity(product._id, parseInt(e.target.value) || 1)
+                          }
+                          className="flex-1 text-center bg-[#252525] text-amber-100 font-bold border-none"
+                        />
+                        <button
+                          onClick={() =>
+                            updateQuantity(product._id, (quantities[product._id] || 1) + 1)
+                          }
+                          className="px-3 py-2 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 font-bold"
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="w-full py-3 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-amber-900/50"
+                      >
+                        🛒 Add to Cart
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full py-3 bg-gray-600 text-gray-300 font-bold rounded-lg cursor-not-allowed"
+                    >
+                      Out of Stock
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* Add-ons Section */}
-      <div className="py-16 px-4 bg-gradient-to-b from-[#1a1a1a] to-[#252525]">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-amber-100 mb-8 text-center">Add-ons & Extras</h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-[#0f0f0f] rounded-xl p-6 border border-amber-900/30">
-              <h3 className="text-amber-200 font-bold mb-4">Milk Options</h3>
-              <ul className="text-gray-400 space-y-2 text-sm">
-                <li>• Whole Milk</li>
-                <li>• Almond Milk +$0.75</li>
-                <li>• Oat Milk +$0.75</li>
-                <li>• Soy Milk +$0.50</li>
-                <li>• Coconut Milk +$0.75</li>
-              </ul>
-            </div>
-
-            <div className="bg-[#0f0f0f] rounded-xl p-6 border border-amber-900/30">
-              <h3 className="text-amber-200 font-bold mb-4">Syrups & Sauces</h3>
-              <ul className="text-gray-400 space-y-2 text-sm">
-                <li>• Vanilla Syrup +$0.50</li>
-                <li>• Caramel Sauce +$0.75</li>
-                <li>• Chocolate Sauce +$0.75</li>
-                <li>• Hazelnut Syrup +$0.50</li>
-                <li>• Honey Drizzle +$0.50</li>
-              </ul>
-            </div>
-
-            <div className="bg-[#0f0f0f] rounded-xl p-6 border border-amber-900/30">
-              <h3 className="text-amber-200 font-bold mb-4">Extras</h3>
-              <ul className="text-gray-400 space-y-2 text-sm">
-                <li>• Extra Shot +$1.00</li>
-                <li>• Whipped Cream +$0.50</li>
-                <li>• Cinnamon Topping +$0.25</li>
-                <li>• Chocolate Sprinkles +$0.35</li>
-                <li>• Extra Hot +Free</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sizes Section */}
-      <div className="py-16 px-4 bg-[#0f0f0f]">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-amber-100 mb-8 text-center">Sizes Available</h2>
-
-          <div className="grid md:grid-cols-4 gap-6">
-            <div className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-xl p-6 border border-amber-900/30 text-center">
-              <div className="text-4xl mb-3">☕</div>
-              <h3 className="text-amber-200 font-bold mb-2">Small</h3>
-              <p className="text-gray-400">8 oz</p>
-            </div>
-            <div className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-xl p-6 border border-amber-900/30 text-center">
-              <div className="text-4xl mb-3">☕</div>
-              <h3 className="text-amber-200 font-bold mb-2">Medium</h3>
-              <p className="text-gray-400">12 oz</p>
-            </div>
-            <div className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-xl p-6 border border-amber-900/30 text-center">
-              <div className="text-4xl mb-3">☕</div>
-              <h3 className="text-amber-200 font-bold mb-2">Large</h3>
-              <p className="text-gray-400">16 oz</p>
-            </div>
-            <div className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-xl p-6 border border-amber-900/30 text-center">
-              <div className="text-4xl mb-3">☕</div>
-              <h3 className="text-amber-200 font-bold mb-2">Extra Large</h3>
-              <p className="text-gray-400">20 oz</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
-  )
+  );
 }

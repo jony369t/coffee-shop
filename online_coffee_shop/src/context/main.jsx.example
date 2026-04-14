@@ -1,0 +1,22 @@
+// Example setup of main.jsx with AuthProvider
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
+import './index.css'
+
+/**
+ * Setup:
+ * 1. Import AuthProvider from context
+ * 2. Wrap App with AuthProvider
+ * 3. Now all components in App can use useAuth() hook
+ */
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </React.StrictMode>,
+)
