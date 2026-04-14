@@ -7,6 +7,12 @@ import Register from "../pages/Register";
 import About from "../pages/About";
 import Menu from "../pages/Menu";
 import Blog from "../pages/Blog";
+import AdminDashboard from "../pages/AdminDashboard";
+import UserDashboard from "../pages/UserDashboard";
+import Cart from "../pages/Cart";
+import Checkout from "../pages/Checkout";
+import PrivateRoute from "../component/PrivateRoute";
+import AdminRoute from "../component/AdminRoute";
 
 export const router = createBrowserRouter([
   {
@@ -31,12 +37,44 @@ export const router = createBrowserRouter([
         element: <Menu />,
       },
       {
+        path: "/cart",
+        element: (
+          <PrivateRoute>
+            <Cart />
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "/checkout",
+        element: (
+          <PrivateRoute>
+            <Checkout />
+          </PrivateRoute>
+        ),
+      },
+      {
         path: "/login",
         element: <Login />,
       },
       {
         path: "/blog",
         element: <Blog />,
-      },   
+      },
+      {
+        path: "/admin/dashboard",
+        element: (
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "/dashboard",
+        element: (
+          <PrivateRoute>
+            <UserDashboard />
+          </PrivateRoute>
+        ),
+      },
     ],
   }]);
