@@ -2,8 +2,21 @@ import React from "react";
 import { NavLink } from "react-router";
 
 export default function Home() {
+  const animationStyles = `
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.2); }
+      50% { transform: scale(1); }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+  `;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0f0f0f] to-[#1a1a1a]">
+      <style>{animationStyles}</style>
       {/* Hero Section */}
       <div
         className="hero min-h-screen bg-cover bg-center relative overflow-hidden"
@@ -61,7 +74,14 @@ export default function Home() {
 
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center p-6 hover:scale-105 transition-transform">
-              <div className="text-5xl mb-4">🌍</div>
+              <div 
+                className="text-5xl mb-4 inline-block"
+                style={{
+                  animation: 'bounce 2s infinite',
+                }}
+              >
+                🌍
+              </div>
               <h3 className="text-amber-200 font-bold text-lg mb-2">
                 Sourced Globally
               </h3>
@@ -70,7 +90,14 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center p-6 hover:scale-105 transition-transform">
-              <div className="text-5xl mb-4">🔥</div>
+              <div 
+                className="text-5xl mb-4 inline-block"
+                style={{
+                  animation: 'spin 3s linear infinite',
+                }}
+              >
+                🔥
+              </div>
               <h3 className="text-amber-200 font-bold text-lg mb-2">
                 Fresh Roasted
               </h3>
@@ -79,7 +106,14 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center p-6 hover:scale-105 transition-transform">
-              <div className="text-5xl mb-4">👨‍🍳</div>
+              <div 
+                className="text-5xl mb-4 inline-block"
+                style={{
+                  animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                }}
+              >
+                👨‍🍳
+              </div>
               <h3 className="text-amber-200 font-bold text-lg mb-2">
                 Expert Baristas
               </h3>
@@ -88,7 +122,14 @@ export default function Home() {
               </p>
             </div>
             <div className="text-center p-6 hover:scale-105 transition-transform">
-              <div className="text-5xl mb-4">💯</div>
+              <div 
+                className="text-5xl mb-4 inline-block"
+                style={{
+                  animation: 'heartbeat 1.3s ease-in-out infinite',
+                }}
+              >
+                💯
+              </div>
               <h3 className="text-amber-200 font-bold text-lg mb-2">
                 Premium Quality
               </h3>
@@ -128,9 +169,12 @@ export default function Home() {
                   Velvety smooth espresso paired with perfectly steamed milk,
                   creating the perfect balance of strength and creaminess.
                 </p>
-                <button className="btn bg-amber-700 hover:bg-amber-800 border-none text-white w-full font-bold">
+                <NavLink 
+                  to="/menu"
+                  className="btn bg-amber-700 hover:bg-amber-800 border-none text-white w-full font-bold"
+                >
                   Discover
-                </button>
+                </NavLink>
               </div>
             </div>
 
@@ -150,9 +194,12 @@ export default function Home() {
                   The ultimate classic - bold espresso crowned with luxurious
                   foam art. Rich, bold, and beautifully presented.
                 </p>
-                <button className="btn bg-amber-700 hover:bg-amber-800 border-none text-white w-full font-bold">
+                <NavLink 
+                  to="/menu"
+                  className="btn bg-amber-700 hover:bg-amber-800 border-none text-white w-full font-bold"
+                >
                   Discover
-                </button>
+                </NavLink>
               </div>
             </div>
 
@@ -172,9 +219,12 @@ export default function Home() {
                   Smooth, refreshing, and naturally sweet. Slow-steeped for 18+
                   hours for the most complex flavors.
                 </p>
-                <button className="btn bg-amber-700 hover:bg-amber-800 border-none text-white w-full font-bold">
+                <NavLink 
+                  to="/menu"
+                  className="btn bg-amber-700 hover:bg-amber-800 border-none text-white w-full font-bold"
+                >
                   Discover
-                </button>
+                </NavLink>
               </div>
             </div>
           </div>
@@ -319,9 +369,15 @@ export default function Home() {
           <p className="text-amber-100 text-lg mb-8">
             Visit us today and discover why our customers keep coming back
           </p>
-          <button className="btn bg-black hover:bg-black/80 border-none text-amber-200 text-lg px-12 font-bold">
-            Explore Our Menu
-          </button>
+          <NavLink
+  to="/menu"
+  className="relative inline-block px-12 py-4 font-bold text-lg text-white rounded-lg
+  bg-gradient-to-r from-amber-700 via-orange-800 to-amber-900
+  hover:from-amber-800 hover:to-black
+  transition-all duration-300 shadow-lg hover:shadow-amber-900/50"
+>
+  ☕ Explore Our Menu
+</NavLink>
         </div>
       </div>
     </div>

@@ -1,8 +1,10 @@
 import React from 'react'
+import { NavLink } from 'react-router'
 
 export default function Blog() {
   const articles = [
     {
+      id: 'brewing-tips',
       title: 'The Art of Coffee Brewing: Tips from Our Head Barista',
       date: 'March 15, 2024',
       category: 'Tutorial',
@@ -10,6 +12,7 @@ export default function Blog() {
       image: '📚',
     },
     {
+      id: 'ethiopian-journey',
       title: 'Exploring Single-Origin Coffees: An Ethiopian Journey',
       date: 'March 10, 2024',
       category: 'Origins',
@@ -17,6 +20,7 @@ export default function Blog() {
       image: '🌍',
     },
     {
+      id: 'spring-collection',
       title: 'Seasonal Roasts: Spring Collection Now Available',
       date: 'March 5, 2024',
       category: 'Releases',
@@ -24,6 +28,7 @@ export default function Blog() {
       image: '🌸',
     },
     {
+      id: 'espresso-science',
       title: 'The Science Behind Espresso Extraction',
       date: 'February 28, 2024',
       category: 'Science',
@@ -31,6 +36,7 @@ export default function Blog() {
       image: '🔬',
     },
     {
+      id: 'fair-trade',
       title: 'Sustainable Coffee Trading: Our Fair Trade Commitment',
       date: 'February 20, 2024',
       category: 'Sustainability',
@@ -38,6 +44,7 @@ export default function Blog() {
       image: '🌱',
     },
     {
+      id: 'coffee-pairings',
       title: 'Best Coffee Pairs: Perfect Pairings for Every Brew',
       date: 'February 15, 2024',
       category: 'Pairing',
@@ -59,25 +66,27 @@ export default function Blog() {
       {/* Featured Article */}
       <div className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
-          <div className="bg-gradient-to-r from-[#1a1a1a] to-[#252525] rounded-2xl overflow-hidden border border-amber-900/30 hover:border-amber-700/50 transition-all shadow-lg hover:shadow-xl hover:shadow-amber-900/30">
-            <div className="grid md:grid-cols-2 gap-0">
-              <div className="h-full flex items-center justify-center bg-gradient-to-br from-amber-900 to-amber-800 text-9xl">
-                📖
-              </div>
-              <div className="p-8 flex flex-col justify-center">
-                <div className="mb-4">
-                  <span className="inline-block bg-amber-700 text-white px-4 py-1 rounded-full text-sm font-semibold">Featured</span>
+          <NavLink to="/blog/brewing-tips" className="block">
+            <div className="bg-gradient-to-r from-[#1a1a1a] to-[#252525] rounded-2xl overflow-hidden border border-amber-900/30 hover:border-amber-700/50 transition-all shadow-lg hover:shadow-xl hover:shadow-amber-900/30 hover:scale-105 cursor-pointer">
+              <div className="grid md:grid-cols-2 gap-0">
+                <div className="h-full flex items-center justify-center bg-gradient-to-br from-amber-900 to-amber-800 text-9xl">
+                  📖
                 </div>
-                <h2 className="text-3xl font-bold text-amber-100 mb-3">The Art of Coffee Brewing: Tips from Our Head Barista</h2>
-                <p className="text-gray-300 mb-4">Discover the secrets to brewing the perfect cup at home and learn the professional techniques used by our expert baristas.</p>
-                <div className="flex gap-4 items-center text-sm text-gray-400">
-                  <span>March 15, 2024</span>
-                  <span>•</span>
-                  <span>8 min read</span>
+                <div className="p-8 flex flex-col justify-center">
+                  <div className="mb-4">
+                    <span className="inline-block bg-amber-700 text-white px-4 py-1 rounded-full text-sm font-semibold">Featured</span>
+                  </div>
+                  <h2 className="text-3xl font-bold text-amber-100 mb-3">The Art of Coffee Brewing: Tips from Our Head Barista</h2>
+                  <p className="text-gray-300 mb-4">Discover the secrets to brewing the perfect cup at home and learn the professional techniques used by our expert baristas.</p>
+                  <div className="flex gap-4 items-center text-sm text-gray-400">
+                    <span>March 15, 2024</span>
+                    <span>•</span>
+                    <span>8 min read</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </NavLink>
         </div>
       </div>
 
@@ -106,10 +115,13 @@ export default function Blog() {
                   <p className="text-gray-400 text-sm leading-relaxed mb-4 line-clamp-3">
                     {article.excerpt}
                   </p>
-                  <button className="text-amber-400 font-semibold hover:text-amber-300 transition-colors inline-flex items-center gap-2">
+                  <NavLink 
+                    to={`/blog/${article.id}`}
+                    className="text-amber-400 font-semibold hover:text-amber-300 transition-colors inline-flex items-center gap-2"
+                  >
                     Read More
                     <span>→</span>
-                  </button>
+                  </NavLink>
                 </div>
               </div>
             ))}

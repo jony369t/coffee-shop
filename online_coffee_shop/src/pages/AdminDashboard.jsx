@@ -150,7 +150,7 @@ export default function AdminDashboard() {
         ...newProduct,
         price: parseFloat(newProduct.price),
         stock: parseInt(newProduct.stock),
-        allergens: newProduct.allergens.split(',').map((a) => a.trim()),
+        // Keep allergens as comma-separated string, not array
       };
 
       const data = await apiCall('/admin/products', {

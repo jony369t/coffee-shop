@@ -7,6 +7,7 @@ import Register from "../pages/Register";
 import About from "../pages/About";
 import Menu from "../pages/Menu";
 import Blog from "../pages/Blog";
+import BlogPost from "../pages/BlogPost";
 import AdminDashboard from "../pages/AdminDashboard";
 import UserDashboard from "../pages/UserDashboard";
 import Cart from "../pages/Cart";
@@ -59,6 +60,10 @@ export const router = createBrowserRouter([
       {
         path: "/blog",
         element: <Blog />,
+      },
+      {
+        path: "/blog/:id",
+        element: <BlogPost />,
       },
       {
         path: "/admin/dashboard",
