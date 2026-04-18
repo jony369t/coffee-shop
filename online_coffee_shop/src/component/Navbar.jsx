@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router";
 import { FaCoffee } from "react-icons/fa";
 import { useAuth } from "../context/useAuth";
@@ -8,6 +8,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const { getCartItemCount } = useCart();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const linkStyle = ({ isActive }) =>
     isActive
@@ -120,42 +121,61 @@ export default function Navbar() {
           </NavLink>
         )}
 
-        {/* LOGIC 2: If logged in - Show user info and logout */}
+        {/* User Profile Dropdown */}
         {isAuthenticated && user && (
-          <>
-            {/* Dashboard link for regular users */}
-            {user.role !== "admin" && (
-              <NavLink
-                to="/dashboard"
-                className="btn btn-sm bg-[#8B4513] border-none text-white hover:bg-[#A0522D] font-bold"
-              >
-                📦 My Orders
-              </NavLink>
-            )}
-
-            {/* LOGIC 3: If admin - Show Admin Dashboard link */}
-            {user.role === "admin" && (
-              <NavLink
-                to="/admin/dashboard"
-                className="btn btn-sm bg-[#D4AF37] border-none text-[#6b3421] hover:bg-[#FFD700] font-bold"
-              >
-                📊 Admin
-              </NavLink>
-            )}
-
-            {/* Show user name */}
-            <span className="text-[#F5F5DC] font-semibold">
-              👤 {user.name}
-            </span>
-
-            {/* Show logout button */}
-            <button
-              onClick={handleLogout}
-              className="btn btn-sm bg-[#8B4513] border-none text-white hover:bg-[#A0522D]"
+          <div className="dropdown dropdown-end">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-sm bg-[#8B4513] border-none text-white hover:bg-[#A0522D] font-bold cursor-pointer"
+              onClick={() => setDropdownOpen(!dropdownOpen)}
             >
-              Logout
-            </button>
-          </>
+              👤 {user.name}
+            </div>
+            <ul
+              tabIndex={0}
+              className="dropdown-content menu bg-[#3E2723] rounded-box z-[1] w-52 p-2 shadow"
+            >
+              {/* Dashboard/My Orders link for regular users */}
+              {user.role !== "admin" && (
+                <li>
+                  <NavLink
+                    to="/dashboard"
+                    onClick={() => setDropdownOpen(false)}
+                    className="text-white hover:bg-[#8B4513]"
+                  >
+                    📦 My Orders
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Admin Dashboard link */}
+              {user.role === "admin" && (
+                <li>
+                  <NavLink
+                    to="/admin/dashboard"
+                    onClick={() => setDropdownOpen(false)}
+                    className="text-white hover:bg-[#8B4513]"
+                  >
+                    📊 Admin Dashboard
+                  </NavLink>
+                </li>
+              )}
+
+              {/* Logout option */}
+              <li>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setDropdownOpen(false);
+                  }}
+                  className="text-white hover:bg-red-600"
+                >
+                  🚪 Logout
+                </button>
+              </li>
+            </ul>
+          </div>
         )}
       </div>
     </div>
