@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/useAuth';
+import { formatUSDToBDT } from '../utils/currencyFormatter';
 
 /**
  * User Dashboard
@@ -13,15 +14,13 @@ import { useAuth } from '../context/useAuth';
  */
 export default function UserDashboard() {
   const { token, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('current'); // 'current', 'history', 'cancelled'
+  const [activeTab, setActiveTab] = useState('all'); // Filter by individual status
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   // State management
-  const [currentOrders, setCurrentOrders] = useState([]);
-  const [completedOrders, setCompletedOrders] = useState([]);
-  const [cancelledOrders, setCancelledOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
   const [stats, setStats] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
@@ -36,7 +35,7 @@ export default function UserDashboard() {
     setLoading(true);
     setError('');
     try {
-      // Fetch current orders
+      // Fetch all orders
       const ordersRes = await fetch(`${API_URL}/orders`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -44,16 +43,8 @@ export default function UserDashboard() {
       });
       const ordersData = await ordersRes.json();
       
-      // Separate current and history
-      const current = ordersData.orders?.filter(
-        (o) => !['completed', 'cancelled'].includes(o.status)
-      ) || [];
-      const completed = ordersData.orders?.filter((o) => o.status === 'completed') || [];
-      const cancelled = ordersData.orders?.filter((o) => o.cancellation?.cancelled) || [];
-
-      setCurrentOrders(current);
-      setCompletedOrders(completed);
-      setCancelledOrders(cancelled);
+      // Store all orders
+      setAllOrders(ordersData.orders || []);
 
       // Fetch statistics
       const statsRes = await fetch(`${API_URL}/orders/stats`, {
@@ -69,6 +60,17 @@ export default function UserDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter orders by active tab status
+  const getFilteredOrders = () => {
+    if (activeTab === 'all') {
+      return allOrders;
+    }
+    if (activeTab === 'confirmed') {
+      return allOrders.filter((o) => o.userConfirmed);
+    }
+    return allOrders.filter((o) => o.status === activeTab);
   };
 
   const cancelOrder = async (orderId) => {
@@ -100,17 +102,41 @@ export default function UserDashboard() {
     }
   };
 
+  const confirmDelivery = async (orderId) => {
+    if (!window.confirm('Confirm that you have received this order?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/orders/${orderId}/confirm`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to confirm delivery');
+      }
+
+      setSuccess('Delivery confirmed! Thank you for your purchase.');
+      fetchOrdersData();
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
         return 'badge-warning';
-      case 'confirmed':
-        return 'badge-info';
       case 'preparing':
+        return 'badge-info';
+      case 'on the way':
         return 'badge-primary';
-      case 'ready':
-        return 'badge-success';
-      case 'completed':
+      case 'delivered':
         return 'badge-success';
       case 'cancelled':
         return 'badge-error';
@@ -123,13 +149,11 @@ export default function UserDashboard() {
     switch (status) {
       case 'pending':
         return '⏳';
-      case 'confirmed':
-        return '✓';
       case 'preparing':
         return '👨‍🍳';
-      case 'ready':
-        return '🎉';
-      case 'completed':
+      case 'on the way':
+        return '🚚';
+      case 'delivered':
         return '✅';
       case 'cancelled':
         return '❌';
@@ -158,9 +182,14 @@ export default function UserDashboard() {
           </h3>
           <p className="text-sm text-gray-600">{formatDate(order.createdAt)}</p>
         </div>
-        <span className={`badge ${getStatusColor(order.status)}`}>
-          {getStatusIcon(order.status)} {order.status}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`badge ${getStatusColor(order.status)}`}>
+            {getStatusIcon(order.status)} {order.status}
+          </span>
+          {order.userConfirmed && (
+            <span className="badge badge-success text-xs">✓ Confirmed</span>
+          )}
+        </div>
       </div>
 
       {/* Order Items */}
@@ -172,7 +201,7 @@ export default function UserDashboard() {
               {item.productName || 'Product'} x {item.quantity}
             </span>
             <span className="text-gray-700 font-semibold">
-              ${(item.subtotal || item.quantity * item.price).toFixed(2)}
+              {formatUSDToBDT(item.subtotal || item.quantity * item.price)}
             </span>
           </div>
         ))}
@@ -182,19 +211,19 @@ export default function UserDashboard() {
       <div className="space-y-1 text-sm mb-3 bg-white rounded p-3">
         <div className="flex justify-between text-gray-600">
           <span>Subtotal:</span>
-          <span>${order.subtotal?.toFixed(2) || '0.00'}</span>
+          <span>{formatUSDToBDT(order.subtotal || 0)}</span>
         </div>
         <div className="flex justify-between text-gray-600">
           <span>Tax (10%):</span>
-          <span>${order.tax?.toFixed(2) || '0.00'}</span>
+          <span>{formatUSDToBDT(order.tax || 0)}</span>
         </div>
         <div className="flex justify-between text-gray-600">
           <span>Delivery:</span>
-          <span>${order.deliveryFee?.toFixed(2) || '0.00'}</span>
+          <span>{formatUSDToBDT(order.deliveryFee || 0)}</span>
         </div>
         <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t">
           <span>Total:</span>
-          <span>${order.totalPrice?.toFixed(2) || '0.00'}</span>
+          <span>{formatUSDToBDT(order.totalPrice || 0)}</span>
         </div>
       </div>
 
@@ -213,7 +242,7 @@ export default function UserDashboard() {
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSelectedOrder(order)}
           className="btn btn-sm btn-outline btn-primary"
@@ -226,6 +255,14 @@ export default function UserDashboard() {
             className="btn btn-sm btn-error"
           >
             Cancel Order
+          </button>
+        )}
+        {order.status === 'delivered' && !order.userConfirmed && (
+          <button
+            onClick={() => confirmDelivery(order._id)}
+            className="btn btn-sm btn-success"
+          >
+            ✓ Confirm Received
           </button>
         )}
       </div>
@@ -260,50 +297,79 @@ export default function UserDashboard() {
         )}
 
         {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-            <div className="bg-white rounded-lg p-4 shadow">
-              <div className="text-3xl font-bold text-amber-600">{stats.pending}</div>
-              <div className="text-sm text-gray-600">Pending</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 shadow">
-              <div className="text-3xl font-bold text-blue-600">{stats.confirmed}</div>
-              <div className="text-sm text-gray-600">Confirmed</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 shadow">
-              <div className="text-3xl font-bold text-purple-600">{stats.preparing}</div>
-              <div className="text-sm text-gray-600">Preparing</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 shadow">
-              <div className="text-3xl font-bold text-green-600">{stats.completed}</div>
-              <div className="text-sm text-gray-600">Completed</div>
-            </div>
-            <div className="bg-white rounded-lg p-4 shadow">
-              <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
-              <div className="text-sm text-gray-600">Cancelled</div>
-            </div>
-          </div>
-        )}
+       
 
         {/* Tabs */}
-        <div className="tabs tabs-bordered mb-6 bg-white rounded-lg p-2">
+        <div className="mb-6 bg-gray-50 rounded-lg p-3 flex flex-wrap gap-2">
           <button
-            onClick={() => setActiveTab('current')}
-            className={`tab tab-lg ${activeTab === 'current' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('all')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'all'
+                ? 'bg-gray-800 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
           >
-            📦 Current Orders ({currentOrders.length})
+            📋 All ({allOrders.length})
           </button>
           <button
-            onClick={() => setActiveTab('history')}
-            className={`tab tab-lg ${activeTab === 'history' ? 'tab-active' : ''}`}
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'pending'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
           >
-            ✅ Order History ({completedOrders.length})
+            ⏳ Pending ({allOrders.filter((o) => o.status === 'pending').length})
+          </button>
+          <button
+            onClick={() => setActiveTab('preparing')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'preparing'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            👨‍🍳 Preparing ({allOrders.filter((o) => o.status === 'preparing').length})
+          </button>
+          <button
+            onClick={() => setActiveTab('on the way')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'on the way'
+                ? 'bg-purple-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            🚚 On the Way ({allOrders.filter((o) => o.status === 'on the way').length})
+          </button>
+          <button
+            onClick={() => setActiveTab('delivered')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'delivered'
+                ? 'bg-green-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            ✅ Delivered ({allOrders.filter((o) => o.status === 'delivered').length})
+          </button>
+          <button
+            onClick={() => setActiveTab('confirmed')}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'confirmed'
+                ? 'bg-cyan-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
+          >
+            ✓ Confirmed ({allOrders.filter((o) => o.userConfirmed).length})
           </button>
           <button
             onClick={() => setActiveTab('cancelled')}
-            className={`tab tab-lg ${activeTab === 'cancelled' ? 'tab-active' : ''}`}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all ${
+              activeTab === 'cancelled'
+                ? 'bg-red-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
+            }`}
           >
-            ❌ Cancelled Orders ({cancelledOrders.length})
+            ❌ Cancelled ({allOrders.filter((o) => o.status === 'cancelled').length})
           </button>
         </div>
 
@@ -313,65 +379,28 @@ export default function UserDashboard() {
             <span className="loading loading-spinner loading-lg"></span>
           </div>
         ) : (
-          <>
-            {/* Current Orders Tab */}
-            {activeTab === 'current' && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                {currentOrders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">No current orders</p>
-                    <button className="btn btn-primary mt-4">
-                      Continue Shopping
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    {currentOrders.map((order) => (
-                      <OrderCard
-                        key={order._id}
-                        order={order}
-                        canCancel={['pending', 'confirmed'].includes(order.status)}
-                      />
-                    ))}
-                  </div>
-                )}
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            {getFilteredOrders().length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg">
+                  {activeTab === 'all' ? 'No orders yet' : `No orders with status: ${activeTab}`}
+                </p>
+                <button className="btn btn-primary mt-4">
+                  Continue Shopping
+                </button>
+              </div>
+            ) : (
+              <div>
+                {getFilteredOrders().map((order) => (
+                  <OrderCard
+                    key={order._id}
+                    order={order}
+                    canCancel={['pending', 'confirmed'].includes(order.status)}
+                  />
+                ))}
               </div>
             )}
-
-            {/* Order History Tab */}
-            {activeTab === 'history' && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                {completedOrders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">No completed orders yet</p>
-                  </div>
-                ) : (
-                  <div>
-                    {completedOrders.map((order) => (
-                      <OrderCard key={order._id} order={order} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Cancelled Orders Tab */}
-            {activeTab === 'cancelled' && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                {cancelledOrders.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">No cancelled orders</p>
-                  </div>
-                ) : (
-                  <div>
-                    {cancelledOrders.map((order) => (
-                      <OrderCard key={order._id} order={order} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
 
@@ -426,7 +455,7 @@ export default function UserDashboard() {
                       <div key={idx} className="flex justify-between py-2">
                         <span>{item.productName} x {item.quantity}</span>
                         <span className="font-semibold">
-                          ${(item.subtotal || item.quantity * item.price).toFixed(2)}
+                          {formatUSDToBDT(item.subtotal || item.quantity * item.price)}
                         </span>
                       </div>
                     ))}
@@ -436,7 +465,7 @@ export default function UserDashboard() {
                 <div>
                   <h3 className="font-bold mb-2">Total Amount</h3>
                   <p className="text-2xl font-bold text-amber-600">
-                    ${selectedOrder.totalPrice?.toFixed(2) || '0.00'}
+                    {formatUSDToBDT(selectedOrder.totalPrice || 0)}
                   </p>
                 </div>
               </div>

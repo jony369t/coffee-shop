@@ -8,6 +8,10 @@ import {
   updateProduct,
   deleteProduct,
 } from '../controllers/adminController.js';
+import {
+  getAllOrders,
+  updateOrderStatusAdmin,
+} from '../controllers/orderController.js';
 
 const router = express.Router();
 
@@ -62,5 +66,21 @@ router.put('/products/:id', protect, adminOnly, updateProduct);
 // DELETE /api/admin/products/:id
 // Delete product from menu
 router.delete('/products/:id', protect, adminOnly, deleteProduct);
+
+/**
+ * =====================
+ * ORDER MANAGEMENT ROUTES (Admin-Only)
+ * =====================
+ */
+
+// GET /api/admin/orders
+// Get all orders in system
+// Returns: All orders with user information
+router.get('/orders', protect, adminOnly, getAllOrders);
+
+// PUT /api/admin/orders/:orderId
+// Update order status (admin tracking)
+// Body: { status: 'pending' | 'preparing' | 'on the way' | 'delivered' | 'cancelled' }
+router.put('/orders/:orderId', protect, adminOnly, updateOrderStatusAdmin);
 
 export default router;

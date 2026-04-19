@@ -98,8 +98,8 @@ export default function Navbar() {
 
       {/* Right */}
       <div className="navbar-end gap-3">
-        {/* Cart Button - Show for authenticated users */}
-        {isAuthenticated && (
+        {/* Cart Button - Show for authenticated users (except admins) */}
+        {isAuthenticated && user?.role !== 'admin' && (
           <NavLink
             to="/cart"
             className="btn btn-sm bg-[#8B4513] border-none text-white hover:bg-[#A0522D] font-bold relative"
