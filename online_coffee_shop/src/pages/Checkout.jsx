@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router';
+import { formatUSDToBDT } from '../utils/currencyFormatter';
 
 /**
  * Checkout Page
@@ -331,7 +332,7 @@ export default function Checkout() {
                     <span>
                       {item.name} × {item.quantity}
                     </span>
-                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                    <span>{formatUSDToBDT(item.price * item.quantity)}</span>
                   </div>
                 ))}
               </div>

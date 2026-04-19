@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
+import { formatUSDToBDT } from '../utils/currencyFormatter';
 
 /**
  * Menu Page
@@ -136,10 +137,10 @@ export default function Menu() {
             {filteredProducts.map((product) => (
               <div
                 key={product._id}
-                className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-lg overflow-hidden border border-amber-900/30 hover:border-amber-700/50 transition-all shadow-lg hover:shadow-amber-900/30"
+                className="bg-gradient-to-b from-[#1a1a1a] to-[#252525] rounded-lg overflow-hidden border border-amber-900/30 hover:border-amber-700/50 transition-all shadow-lg hover:shadow-amber-900/30 hover:scale-105 duration-300 flex flex-col h-full"
               >
-                {/* Product Image */}
-                <div className="h-48 bg-[#0f0f0f] overflow-hidden">
+                {/* Product Image - 60-65% of card height */}
+                <div className="h-[280px] bg-[#0f0f0f] overflow-hidden rounded-t-lg">
                   {product.image ? (
                     <img
                       src={product.image}
@@ -150,107 +151,119 @@ export default function Menu() {
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-amber-900/20 to-black">
+                    <div className="w-full h-full flex items-center justify-center text-5xl bg-gradient-to-br from-amber-900/20 to-black">
                       ☕
                     </div>
                   )}
                 </div>
 
-                {/* Product Info */}
-                <div className="p-4">
-                  <h3 className="text-xl font-bold text-amber-100 mb-2">{product.name}</h3>
-                  
-                  <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-                    {product.description || 'Premium coffee experience'}
-                  </p>
+                {/* Product Info - Split LEFT & RIGHT */}
+                <div className="p-4 flex flex-col flex-grow">
+                  {/* LEFT SIDE: Name, Description, Category, Stock */}
+                  <div className="flex justify-between items-start gap-4 mb-4">
+                    <div className="flex-1">
+                      {/* Name */}
+                      <h3 className="text-xl font-bold text-amber-100 mb-2">{product.name}</h3>
 
-                  {/* Category Badge */}
-                  {product.category && (
-                    <div className="mb-3">
-                      <span className="inline-block px-2 py-1 bg-amber-900/30 text-amber-300 text-xs rounded-full">
-                        {product.category}
-                      </span>
+                      {/* Description */}
+                      <p className="text-gray-400 text-sm mb-3 line-clamp-2">
+                        {product.description || 'Premium coffee experience'}
+                      </p>
+
+                      {/* Category Badge */}
+                      {product.category && (
+                        <div className="mb-2">
+                          <span className="inline-block px-2 py-1 bg-amber-900/30 text-amber-300 text-xs rounded-full">
+                            {product.category}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Stock Status */}
+                      <div>
+                        <span
+                          className={`text-sm font-semibold ${
+                            product.available && product.stock > 0
+                              ? 'text-green-400'
+                              : 'text-red-400'
+                          }`}
+                        >
+                          {product.available && product.stock > 0
+                            ? `${product.stock} in stock`
+                            : 'Out of stock'}
+                        </span>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Stock Status */}
-                  <div className="mb-3">
-                    <span
-                      className={`text-sm font-semibold ${
-                        product.available && product.stock > 0
-                          ? 'text-green-400'
-                          : 'text-red-400'
-                      }`}
-                    >
-                      {product.available && product.stock > 0
-                        ? `${product.stock} in stock`
-                        : 'Out of stock'}
-                    </span>
+                    {/* RIGHT SIDE: Rating & Price */}
+                    <div className="flex flex-col items-end gap-3">
+                      {/* Rating */}
+                      {product.rating && (
+                        <div className="bg-amber-900/20 px-3 py-2 rounded-lg">
+                          <span className="text-amber-300 font-semibold">
+                            ⭐ {product.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Price - Highlighted */}
+                      <div className="bg-gradient-to-r from-amber-700/30 to-amber-900/30 px-4 py-2 rounded-lg border border-amber-600/50">
+                        <span className="text-2xl font-bold text-amber-400">
+                          {formatUSDToBDT(product.price)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Rating */}
-                  {product.rating && (
-                    <div className="mb-3">
-                      <span className="text-amber-300">
-                        ⭐ {product.rating.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
+                  {/* Quantity Selector & Add to Cart - Pushed to bottom */}
+                  <div className="mt-auto">
+                    {product.available && product.stock > 0 ? (
+                      <div className="space-y-3">
+                        <div className="flex items-center border border-amber-900/50 rounded-lg overflow-hidden">
+                          <button
+                            onClick={() =>
+                              updateQuantity(product._id, (quantities[product._id] || 1) - 1)
+                            }
+                            className="px-3 py-2 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 font-bold"
+                          >
+                            −
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            value={quantities[product._id] || 1}
+                            onChange={(e) =>
+                              updateQuantity(product._id, parseInt(e.target.value) || 1)
+                            }
+                            className="flex-1 text-center bg-[#252525] text-amber-100 font-bold border-none"
+                          />
+                          <button
+                            onClick={() =>
+                              updateQuantity(product._id, (quantities[product._id] || 1) + 1)
+                            }
+                            className="px-3 py-2 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 font-bold"
+                          >
+                            +
+                          </button>
+                        </div>
 
-                  {/* Price */}
-                  <div className="mb-4">
-                    <span className="text-3xl font-bold text-amber-400">
-                      ${product.price.toFixed(2)}
-                    </span>
-                  </div>
-
-                  {/* Quantity Selector & Add to Cart */}
-                  {product.available && product.stock > 0 ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center border border-amber-900/50 rounded-lg overflow-hidden">
                         <button
-                          onClick={() =>
-                            updateQuantity(product._id, (quantities[product._id] || 1) - 1)
-                          }
-                          className="px-3 py-2 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 font-bold"
+                          onClick={() => handleAddToCart(product)}
+                          className="w-full py-3 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-amber-900/50"
                         >
-                          −
-                        </button>
-                        <input
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={quantities[product._id] || 1}
-                          onChange={(e) =>
-                            updateQuantity(product._id, parseInt(e.target.value) || 1)
-                          }
-                          className="flex-1 text-center bg-[#252525] text-amber-100 font-bold border-none"
-                        />
-                        <button
-                          onClick={() =>
-                            updateQuantity(product._id, (quantities[product._id] || 1) + 1)
-                          }
-                          className="px-3 py-2 bg-amber-900/20 hover:bg-amber-900/40 text-amber-400 font-bold"
-                        >
-                          +
+                          🛒 Add to Cart
                         </button>
                       </div>
-
+                    ) : (
                       <button
-                        onClick={() => handleAddToCart(product)}
-                        className="w-full py-3 bg-gradient-to-r from-amber-700 to-amber-900 hover:from-amber-800 hover:to-black text-white font-bold rounded-lg transition-all shadow-lg hover:shadow-amber-900/50"
+                        disabled
+                        className="w-full py-3 bg-gray-600 text-gray-300 font-bold rounded-lg cursor-not-allowed"
                       >
-                        🛒 Add to Cart
+                        Out of Stock
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full py-3 bg-gray-600 text-gray-300 font-bold rounded-lg cursor-not-allowed"
-                    >
-                      Out of Stock
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
